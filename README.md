@@ -112,6 +112,84 @@ singular Wick monomial makes the right-hand side extensive in the volume, so the
 per unit volume is uniform, and one can pass to the infinite-volume / continuum limit.
 A cluster expansion is not needed at any step.
 
+## For physicists: known names for the same inequality
+
+The bound `−log ∫ e^{−V} dμ_G ≤ ∫ V(· + h) dμ_G + ½‖h‖²` is a single inequality with
+at least four standard names in the physics literature.
+
+**Peierls–Bogoliubov / Gibbs–Bogoliubov–Feynman inequality.** In statistical mechanics,
+for any trial Hamiltonian `H₀` with Gibbs measure `ρ₀`,
+
+```
+F  ≤  F₀ + ⟨H − H₀⟩_{ρ₀}.
+```
+
+This is the Gibbs variational inequality applied with `ν = ρ₀`. The Boué–Dupuis
+specialisation chooses the trial measure to be a *Cameron–Martin translate* of the
+Gaussian, i.e. `ρ₀ = μ_G(· − h)`; for that choice `F₀ = 0` and the trial free entropy
+collapses to the quadratic Cameron–Martin cost `½‖h‖²`.
+
+**Bogoliubov variational principle in many-body physics.** The same inequality used
+in BCS / Hartree–Fock to optimise a quadratic (quasi-free) trial state against the
+interacting one. The trial-state class is Gaussian; the bound reduces to mean-field
+theory.
+
+**Feynman polaron variational principle (1955).** Feynman's polaron upper bound is
+exactly this inequality on path space, with `μ` = Wiener measure under the full polaron
+action and `ν` = Wiener measure under a Gaussian trial action. The Boué–Dupuis formula
+is the modern path-space form of Feynman's argument, with deterministic shifts replaced
+by progressively measurable drifts.
+
+**Background-field method at tree level.** The Cameron–Martin shift `W ↦ W + h` is the
+background-field decomposition `φ = h + φ̃`:
+
+* `½‖h‖²` = classical (free) action of the background.
+* `∫ V(h + φ̃) dμ_G(φ̃)` = average of the interaction over the quantum fluctuation `φ̃`.
+* Minimising the sum over `h` is the saddle-point / classical-equations-of-motion step.
+
+The right-hand side is the effective action evaluated at one-loop Gaussian level around
+the background `h`; the inequality says this upper-bounds the true free energy.
+
+### Relation to the 1PI effective action
+
+The 1PI effective action is the Legendre transform of the cumulant generating
+functional `W[J] = log Z[J]`:
+
+```
+Γ[φ_cl]  =  sup_J ( ⟨J, φ_cl⟩ − W[J] ).
+```
+
+The **Donsker–Varadhan duality** is the same Legendre transform at the level of
+probability measures rather than sources:
+
+```
+log ∫ eᶠ dμ  =  sup_ν ( 𝔼_ν[f] − KL(ν‖μ) ).
+```
+
+Identifying `f ↔ J` and `ν ↔ φ_cl` (with `KL` playing the role of `Γ` minus its
+`J`-coupling), the two statements are the same convex-analysis identity. The Gibbs
+inequality is one side of this duality, applied with a Gaussian translate as the
+trial measure; the supremum is attained at the tilted (Gibbs-with-source) measure,
+which is the probabilistic analogue of solving `∂Γ/∂φ_cl = J`.
+
+### Relation to Wilsonian / Polchinski flow
+
+In the Barashkov–Gubinelli variational method for `Φ⁴₃` — and the lattice variant for
+`Φ⁴₂` underneath `pphi2` — the drift `h` is constructed *scale by scale* to cancel the
+Wick-singular pieces of `V` as the UV cutoff is removed. The drift then plays the role
+of a **running counterterm**, which is morally the same object as the counterterm in
+Polchinski's exact RG / Wilsonian effective action: the regulator scale of the flow
+equation is replaced by the time horizon of an SDE built from the drift. The Gibbs
+inequality + Cameron–Martin cost packages the bookkeeping of one scale; iterated over
+scales it is a non-perturbative renormalisation procedure.
+
+**Bottom line.** `neg_log_integral_exp_neg_le` is the formalised one-line statement
+underneath Peierls–Bogoliubov, Bogoliubov's mean-field principle, Feynman's polaron
+bound, the tree-level background-field method, the Donsker–Varadhan / 1PI Legendre
+duality (one direction), and the per-scale Polchinski flow bound. The modern
+"variational approach to constructive QFT" is the application of this inequality with
+the drift `h` chosen as a Wilsonian counterterm.
+
 ## File map
 
 | File | Contents |

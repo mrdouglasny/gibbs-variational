@@ -21,11 +21,12 @@ open scoped ENNReal NNReal
 
 namespace GibbsVariational
 
-/-- The standard `n`-dimensional Gaussian measure on `Fin n → ℝ`. -/
-noncomputable def stdGaussian (n : ℕ) : Measure (Fin n → ℝ) :=
+/-- The standard Gaussian measure on `ι → ℝ` for a finite index type `ι`
+(the product of one-dimensional `N(0,1)` factors). -/
+noncomputable def stdGaussian (ι : Type*) [Fintype ι] : Measure (ι → ℝ) :=
   Measure.pi (fun _ => gaussianReal 0 1)
 
-instance (n : ℕ) : IsProbabilityMeasure (stdGaussian n) := by
+instance (ι : Type*) [Fintype ι] : IsProbabilityMeasure (stdGaussian ι) := by
   unfold stdGaussian; infer_instance
 
 /-- The 1D building block: `KL(N(c,1) ‖ N(0,1)) = ½ c²`.
@@ -171,6 +172,36 @@ lemma klDiv_pi :
                 rw [klDiv_pi (μ := fun i => μ (Fin.succ i)) (ν := fun i => ν (Fin.succ i))]
         _ = ∑ i, klDiv (μ i) (ν i) := by rw [Fin.sum_univ_succ]
 
+/-- KL divergence tensorises over `Measure.pi` for an arbitrary finite index type `ι`
+(constant-fibre form). Transported from the `Fin n` case `klDiv_pi` via `Fintype.equivFin`,
+using `klDiv` invariance under the reindexing measurable equivalence. -/
+lemma klDiv_pi_fintype {ι : Type*} [Fintype ι] {X : Type*} [MeasurableSpace X]
+    (μ ν : ι → Measure X) [∀ i, IsProbabilityMeasure (μ i)] [∀ i, IsProbabilityMeasure (ν i)] :
+    klDiv (Measure.pi μ) (Measure.pi ν) = ∑ i, klDiv (μ i) (ν i) := by
+  let e := Fintype.equivFin ι
+  let E := MeasurableEquiv.piCongrLeft (fun _ : Fin (Fintype.card ι) => X) e
+  haveI : ∀ j, IsProbabilityMeasure (μ (e.symm j)) := fun j => inferInstance
+  haveI : ∀ j, IsProbabilityMeasure (ν (e.symm j)) := fun j => inferInstance
+  haveI : ∀ j, SigmaFinite (μ (e.symm j)) := fun j => inferInstance
+  haveI : ∀ j, SigmaFinite (ν (e.symm j)) := fun j => inferInstance
+  have hstarμ : (Measure.pi μ).map E = Measure.pi (fun j => μ (e.symm j)) := by
+    have h := Measure.pi_map_piCongrLeft (β := fun _ : Fin (Fintype.card ι) => X) e
+      (μ := fun j => μ (e.symm j))
+    rwa [show (fun i => μ (e.symm (e i))) = μ from
+      funext fun i => by rw [e.symm_apply_apply]] at h
+  have hstarν : (Measure.pi ν).map E = Measure.pi (fun j => ν (e.symm j)) := by
+    have h := Measure.pi_map_piCongrLeft (β := fun _ : Fin (Fintype.card ι) => X) e
+      (μ := fun j => ν (e.symm j))
+    rwa [show (fun i => ν (e.symm (e i))) = ν from
+      funext fun i => by rw [e.symm_apply_apply]] at h
+  calc klDiv (Measure.pi μ) (Measure.pi ν)
+      = klDiv ((Measure.pi μ).map E) ((Measure.pi ν).map E) :=
+        (klDiv_map_measurableEquiv E (Measure.pi μ) (Measure.pi ν)).symm
+    _ = klDiv (Measure.pi (fun j => μ (e.symm j))) (Measure.pi (fun j => ν (e.symm j))) := by
+        rw [hstarμ, hstarν]
+    _ = ∑ j, klDiv (μ (e.symm j)) (ν (e.symm j)) := klDiv_pi _ _
+    _ = ∑ i, klDiv (μ i) (ν i) := Equiv.sum_comp e.symm (fun i => klDiv (μ i) (ν i))
+
 /-- **Cameron–Martin relative entropy** for the standard finite-dimensional Gaussian.
 
 Shifting the standard Gaussian by `h` costs relative entropy `½‖h‖²`:
@@ -185,20 +216,20 @@ Hence, `(shifted)`-a.e., `llr (shifted) (stdGaussian n) (x) = ∑ᵢ h i · x i 
 
 Reduce to the 1D case `klDiv (gaussianReal (h i) 1) (gaussianReal 0 1) = ½ (h i)²` (a direct
 density computation) and tensorize via `klDiv` of product measures over `Measure.pi`. -/
-theorem klDiv_stdGaussian_map_add (n : ℕ) (h : Fin n → ℝ) :
-    klDiv ((stdGaussian n).map (· + h)) (stdGaussian n)
+theorem klDiv_stdGaussian_map_add {ι : Type*} [Fintype ι] (h : ι → ℝ) :
+    klDiv ((stdGaussian ι).map (· + h)) (stdGaussian ι)
       = ENNReal.ofReal (2⁻¹ * ∑ i, (h i) ^ 2) := by
-  have hmap : (stdGaussian n).map (· + h) = Measure.pi (fun i => gaussianReal (h i) 1) := by
+  have hmap : (stdGaussian ι).map (· + h) = Measure.pi (fun i => gaussianReal (h i) 1) := by
     unfold stdGaussian
-    change (Measure.pi fun _ : Fin n => gaussianReal 0 1).map (fun x i => x i + h i) =
+    change (Measure.pi fun _ : ι => gaussianReal 0 1).map (fun x i => x i + h i) =
       Measure.pi (fun i => gaussianReal (h i) 1)
-    rw [show (Measure.pi fun _ : Fin n => gaussianReal 0 1).map (fun x i => x i + h i) =
+    rw [show (Measure.pi fun _ : ι => gaussianReal 0 1).map (fun x i => x i + h i) =
         Measure.pi (fun i => (gaussianReal 0 1).map (fun x : ℝ => x + h i)) by
-          simpa using (Measure.pi_map_pi (μ := fun _ : Fin n => gaussianReal 0 1)
+          simpa using (Measure.pi_map_pi (μ := fun _ : ι => gaussianReal 0 1)
             (f := fun i (x : ℝ) => x + h i) (hf := fun i => by fun_prop))]
     exact congrArg Measure.pi <| funext fun i => by
       simpa using gaussianReal_map_add_const (μ := 0) (v := 1) (y := h i)
-  rw [hmap, stdGaussian, klDiv_pi]
+  rw [hmap, stdGaussian, klDiv_pi_fintype]
   simp_rw [klDiv_gaussianReal_shift]
   rw [← ENNReal.ofReal_sum_of_nonneg]
   · congr 1

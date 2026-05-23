@@ -28,25 +28,6 @@ noncomputable def stdGaussian (n : ℕ) : Measure (Fin n → ℝ) :=
 instance (n : ℕ) : IsProbabilityMeasure (stdGaussian n) := by
   unfold stdGaussian; infer_instance
 
-/-- **Cameron–Martin relative entropy** for the standard finite-dimensional Gaussian.
-
-Shifting the standard Gaussian by `h` costs relative entropy `½‖h‖²`:
-`KL((stdGaussian n).map (· + h) ‖ stdGaussian n) = ½ ∑ᵢ (h i)²`.
-
-**Proof strategy.** The Cameron–Martin density factorizes over coordinates:
-`d((stdGaussian n).map (·+h)) / d(stdGaussian n) (x) = exp(∑ᵢ (h i · x i − ½ (h i)²))`
-(product of the 1D Gaussian shift densities `exp(hᵢ xᵢ − ½ hᵢ²)`, each from `gaussianReal`).
-Hence, `(shifted)`-a.e., `llr (shifted) (stdGaussian n) (x) = ∑ᵢ h i · x i − ½ ∑ᵢ (h i)²`, so
-`KL = ∫ llr d(shifted) = ∑ᵢ h i · 𝔼_shifted[xᵢ] − ½ ∑ᵢ (h i)² = ∑ᵢ (h i)² − ½ ∑ᵢ (h i)²`
-`= ½ ∑ᵢ (h i)²`, using `𝔼_shifted[xᵢ] = h i` (the shifted Gaussian has mean `h`).
-
-Reduce to the 1D case `klDiv (gaussianReal (h i) 1) (gaussianReal 0 1) = ½ (h i)²` (a direct
-density computation) and tensorize via `klDiv` of product measures over `Measure.pi`. -/
-theorem klDiv_stdGaussian_map_add (n : ℕ) (h : Fin n → ℝ) :
-    klDiv ((stdGaussian n).map (· + h)) (stdGaussian n)
-      = ENNReal.ofReal (2⁻¹ * ∑ i, (h i) ^ 2) := by
-  sorry
-
 /-- The 1D building block: `KL(N(c,1) ‖ N(0,1)) = ½ c²`.
 
 Direct density computation. The Radon–Nikodym derivative `d N(c,1)/d N(0,1)` is the PDF ratio
@@ -106,5 +87,123 @@ theorem klDiv_gaussianReal_shift (c : ℝ) :
         from (integral_congr_ae hllr).trans hmean]
     simp
   rw [← ENNReal.ofReal_toReal hne, hval]
+
+lemma klDiv_map_measurableEquiv {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (e : α ≃ᵐ β) (μ ν : Measure α) [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    klDiv (μ.map e) (ν.map e) = klDiv μ ν := by
+  by_cases h : μ ≪ ν
+  · rw [klDiv_eq_lintegral_klFun_of_ac (μ := μ.map e) (ν := ν.map e)
+      (e.measurableEmbedding.absolutelyContinuous_map h)]
+    rw [klDiv_eq_lintegral_klFun_of_ac (μ := μ) (ν := ν) h]
+    rw [MeasureTheory.lintegral_map_equiv (μ := ν)
+      (f := fun y => ENNReal.ofReal (klFun (((μ.map e).rnDeriv (ν.map e) y).toReal))) e]
+    refine lintegral_congr_ae ?_
+    filter_upwards [e.measurableEmbedding.rnDeriv_map μ ν] with x hx
+    simp [hx]
+  · have hmap : ¬ μ.map e ≪ ν.map e := by
+      intro hmap
+      have hback := e.symm.measurableEmbedding.absolutelyContinuous_map hmap
+      exact h (by simpa using hback)
+    rw [klDiv_of_not_ac hmap, klDiv_of_not_ac h]
+
+lemma klDiv_prod {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (μ₁ ν₁ : Measure α) (μ₂ ν₂ : Measure β)
+    [IsProbabilityMeasure μ₁] [IsProbabilityMeasure ν₁]
+    [IsProbabilityMeasure μ₂] [IsProbabilityMeasure ν₂] :
+    klDiv (μ₁.prod μ₂) (ν₁.prod ν₂) = klDiv μ₁ ν₁ + klDiv μ₂ ν₂ := by
+  have hswap : klDiv (μ₁.prod μ₂) (μ₁.prod ν₂) = klDiv (μ₂.prod μ₁) (ν₂.prod μ₁) := by
+    have h := klDiv_map_measurableEquiv (e := MeasurableEquiv.prodComm) (μ := μ₁.prod μ₂)
+      (ν := μ₁.prod ν₂)
+    change klDiv (Measure.map Prod.swap (μ₁.prod μ₂)) (Measure.map Prod.swap (μ₁.prod ν₂)) = _
+      at h
+    symm
+    simpa [MeasureTheory.Measure.prod_swap] using h
+  have hright : klDiv (μ₂.prod μ₁) (ν₂.prod μ₁) = klDiv μ₂ ν₂ := by
+    simpa [Measure.compProd_const] using
+      (klDiv_compProd_left (μ := μ₂) (ν := ν₂) (κ := Kernel.const β μ₁))
+  calc
+    klDiv (μ₁.prod μ₂) (ν₁.prod ν₂)
+        = klDiv μ₁ ν₁ + klDiv (μ₁.prod μ₂) (μ₁.prod ν₂) := by
+            simpa [Measure.compProd_const] using
+              (klDiv_compProd_eq_add (μ := μ₁) (ν := ν₁)
+                (κ := Kernel.const α μ₂) (η := Kernel.const α ν₂))
+    _ = klDiv μ₁ ν₁ + klDiv (μ₂.prod μ₁) (ν₂.prod μ₁) := by rw [hswap]
+    _ = klDiv μ₁ ν₁ + klDiv μ₂ ν₂ := by rw [hright]
+
+lemma klDiv_pi :
+    ∀ {n : ℕ} {X : Fin n → Type*} [∀ i, MeasurableSpace (X i)]
+      (μ ν : ∀ i, Measure (X i)) [∀ i, IsProbabilityMeasure (μ i)]
+      [∀ i, IsProbabilityMeasure (ν i)],
+      klDiv (Measure.pi μ) (Measure.pi ν) = ∑ i, klDiv (μ i) (ν i)
+  | 0, X, _, μ, ν, _, _ => by
+      calc
+        klDiv (Measure.pi μ) (Measure.pi ν)
+            = klDiv ((Measure.pi μ).map (MeasurableEquiv.ofUniqueOfUnique ((i : Fin 0) → X i)
+                Unit))
+                ((Measure.pi ν).map (MeasurableEquiv.ofUniqueOfUnique ((i : Fin 0) → X i)
+                Unit)) := by
+                  symm
+                  exact klDiv_map_measurableEquiv
+                    (e := MeasurableEquiv.ofUniqueOfUnique ((i : Fin 0) → X i) Unit)
+                    (μ := Measure.pi μ) (ν := Measure.pi ν)
+        _ = 0 := by
+            rw [(MeasureTheory.measurePreserving_pi_empty (μ := μ)).map_eq,
+              (MeasureTheory.measurePreserving_pi_empty (μ := ν)).map_eq]
+            simp
+        _ = ∑ i, klDiv (μ i) (ν i) := by simp
+  | n + 1, X, _, μ, ν, _, _ => by
+      calc
+        klDiv (Measure.pi μ) (Measure.pi ν)
+            = klDiv ((Measure.pi μ).map (MeasurableEquiv.piFinSuccAbove X 0))
+                ((Measure.pi ν).map (MeasurableEquiv.piFinSuccAbove X 0)) := by
+                  symm
+                  exact klDiv_map_measurableEquiv (e := MeasurableEquiv.piFinSuccAbove X 0)
+                    (μ := Measure.pi μ) (ν := Measure.pi ν)
+        _ = klDiv ((μ 0).prod (Measure.pi fun i => μ (Fin.succ i)))
+              ((ν 0).prod (Measure.pi fun i => ν (Fin.succ i))) := by
+                rw [(MeasureTheory.measurePreserving_piFinSuccAbove (μ := μ) 0).map_eq,
+                  (MeasureTheory.measurePreserving_piFinSuccAbove (μ := ν) 0).map_eq]
+                rfl
+        _ = klDiv (μ 0) (ν 0) + klDiv (Measure.pi fun i => μ (Fin.succ i))
+              (Measure.pi fun i => ν (Fin.succ i)) := by
+                rw [klDiv_prod]
+        _ = klDiv (μ 0) (ν 0) + ∑ i, klDiv (μ (Fin.succ i)) (ν (Fin.succ i)) := by
+                rw [klDiv_pi (μ := fun i => μ (Fin.succ i)) (ν := fun i => ν (Fin.succ i))]
+        _ = ∑ i, klDiv (μ i) (ν i) := by rw [Fin.sum_univ_succ]
+
+/-- **Cameron–Martin relative entropy** for the standard finite-dimensional Gaussian.
+
+Shifting the standard Gaussian by `h` costs relative entropy `½‖h‖²`:
+`KL((stdGaussian n).map (· + h) ‖ stdGaussian n) = ½ ∑ᵢ (h i)²`.
+
+**Proof strategy.** The Cameron–Martin density factorizes over coordinates:
+`d((stdGaussian n).map (·+h)) / d(stdGaussian n) (x) = exp(∑ᵢ (h i · x i − ½ (h i)²))`
+(product of the 1D Gaussian shift densities `exp(hᵢ xᵢ − ½ hᵢ²)`, each from `gaussianReal`).
+Hence, `(shifted)`-a.e., `llr (shifted) (stdGaussian n) (x) = ∑ᵢ h i · x i − ½ ∑ᵢ (h i)²`, so
+`KL = ∫ llr d(shifted) = ∑ᵢ h i · 𝔼_shifted[xᵢ] − ½ ∑ᵢ (h i)² = ∑ᵢ (h i)² − ½ ∑ᵢ (h i)²`
+`= ½ ∑ᵢ (h i)²`, using `𝔼_shifted[xᵢ] = h i` (the shifted Gaussian has mean `h`).
+
+Reduce to the 1D case `klDiv (gaussianReal (h i) 1) (gaussianReal 0 1) = ½ (h i)²` (a direct
+density computation) and tensorize via `klDiv` of product measures over `Measure.pi`. -/
+theorem klDiv_stdGaussian_map_add (n : ℕ) (h : Fin n → ℝ) :
+    klDiv ((stdGaussian n).map (· + h)) (stdGaussian n)
+      = ENNReal.ofReal (2⁻¹ * ∑ i, (h i) ^ 2) := by
+  have hmap : (stdGaussian n).map (· + h) = Measure.pi (fun i => gaussianReal (h i) 1) := by
+    unfold stdGaussian
+    change (Measure.pi fun _ : Fin n => gaussianReal 0 1).map (fun x i => x i + h i) =
+      Measure.pi (fun i => gaussianReal (h i) 1)
+    rw [show (Measure.pi fun _ : Fin n => gaussianReal 0 1).map (fun x i => x i + h i) =
+        Measure.pi (fun i => (gaussianReal 0 1).map (fun x : ℝ => x + h i)) by
+          simpa using (Measure.pi_map_pi (μ := fun _ : Fin n => gaussianReal 0 1)
+            (f := fun i (x : ℝ) => x + h i) (hf := fun i => by fun_prop))]
+    exact congrArg Measure.pi <| funext fun i => by
+      simpa using gaussianReal_map_add_const (μ := 0) (v := 1) (y := h i)
+  rw [hmap, stdGaussian, klDiv_pi]
+  simp_rw [klDiv_gaussianReal_shift]
+  rw [← ENNReal.ofReal_sum_of_nonneg]
+  · congr 1
+    rw [Finset.mul_sum]
+  · intro i hi
+    positivity
 
 end GibbsVariational

@@ -17,7 +17,8 @@ convex duality), needing no stochastic-calculus / Wiener-space machinery.
 | `GibbsVariational/Variational.lean` | `integral_le_log_integral_exp_add_klDiv` — Gibbs variational inequality `∫f dν ≤ log∫eᶠ dμ + KL(ν‖μ)` | **proved** (bare Mathlib trio) |
 | | `log_integral_exp_eq_sSup_sub_klDiv` — Donsker–Varadhan duality | skeleton (`sorry`) |
 | `GibbsVariational/GaussianEntropy.lean` | `klDiv_gaussianReal_shift` — 1D building block `KL(N(c,1)‖N(0,1)) = ½c²` | **proved** (bare Mathlib trio) |
-| | `klDiv_stdGaussian_map_add` — `KL(shifted std Gaussian ‖ std Gaussian) = ½‖h‖²` (Cameron–Martin cost; tensorises the 1D block) | skeleton (`sorry`) |
+| | `klDiv_stdGaussian_map_add` — `KL(shifted std Gaussian ‖ std Gaussian) = ½‖h‖²` (Cameron–Martin cost) | **proved** (bare Mathlib trio) |
+| | `klDiv_pi` / `klDiv_prod` / `klDiv_map_measurableEquiv` — KL tensorisation over `Measure.pi` / binary products / invariance under measurable equiv (general, Mathlib-upstreamable) | **proved** |
 | `GibbsVariational/BoueDupuis.lean` | `neg_log_integral_exp_neg_le` — finite-dim Boué–Dupuis: `−log∫e^{−V} ≤ ∫V(·+h) + ½‖h‖²` | skeleton |
 
 Built on Mathlib's `InformationTheory.klDiv` (Kullback–Leibler divergence) and

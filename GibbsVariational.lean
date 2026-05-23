@@ -1,0 +1,3 @@
+import GibbsVariational.Variational
+import GibbsVariational.GaussianEntropy
+import GibbsVariational.BoueDupuis

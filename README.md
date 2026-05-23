@@ -14,7 +14,8 @@ convex duality), needing no stochastic-calculus / Wiener-space machinery.
 
 | File | Result | Status |
 |---|---|---|
-| `GibbsVariational/Variational.lean` | `integral_le_log_integral_exp_add_klDiv` — Gibbs variational inequality `∫f dν ≤ log∫eᶠ dμ + KL(ν‖μ)`; `log_integral_exp_eq_sSup_sub_klDiv` — Donsker–Varadhan duality | skeleton (proof-strategy docstrings, `sorry`) |
+| `GibbsVariational/Variational.lean` | `integral_le_log_integral_exp_add_klDiv` — Gibbs variational inequality `∫f dν ≤ log∫eᶠ dμ + KL(ν‖μ)` | **proved** (bare Mathlib trio) |
+| | `log_integral_exp_eq_sSup_sub_klDiv` — Donsker–Varadhan duality | skeleton (`sorry`) |
 | `GibbsVariational/GaussianEntropy.lean` | `klDiv_stdGaussian_map_add` — `KL(shifted std Gaussian ‖ std Gaussian) = ½‖h‖²` (Cameron–Martin cost); `klDiv_gaussianReal_shift` — 1D building block | skeleton |
 | `GibbsVariational/BoueDupuis.lean` | `neg_log_integral_exp_neg_le` — finite-dim Boué–Dupuis: `−log∫e^{−V} ≤ ∫V(·+h) + ½‖h‖²` | skeleton |
 

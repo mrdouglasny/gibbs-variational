@@ -26,6 +26,17 @@ This is the **Gibbs variational inequality** (`integral_le_log_integral_exp_add_
 (equality with the supremum over `ν`) is stated as `log_integral_exp_eq_sSup_sub_klDiv` and
 left as a `sorry` skeleton.
 
+> **⚠️ Known issue (2026-06-02): the current `log_integral_exp_eq_sSup_sub_klDiv`
+> statement appears to be _false as literally written_.** The supremand uses
+> `(klDiv ν μ).toReal`, and `.toReal` collapses an _infinite_ KL divergence to `0`
+> rather than `−∞`. So a `ν` with `KL(ν‖μ) = ∞` contributes `∫ f dν − 0` to the
+> `sSup` set, which can exceed `log ∫ eᶠ dμ` and breaks the claimed equality. The
+> intended theorem needs either (a) the `sSup` set restricted to `ν` with
+> `klDiv ν μ ≠ ∞`, or (b) the subtraction taken in `EReal`/`ENNReal` so that infinite
+> KL gives `−∞`. The statement must be corrected before the `sorry` can be discharged.
+> (Surfaced by an automated discharge attempt, which correctly refused to "prove" the
+> statement as stated.)
+
 ### 2. Cameron–Martin relative entropy of a finite-dimensional Gaussian
 
 For the standard Gaussian on `Fin n → ℝ` and any shift `h : Fin n → ℝ`,
@@ -203,7 +214,7 @@ the drift `h` chosen as a Wilsonian counterterm.
 | Result | State |
 |---|---|
 | `integral_le_log_integral_exp_add_klDiv` (Gibbs inequality) | proved |
-| `log_integral_exp_eq_sSup_sub_klDiv` (Donsker–Varadhan equality) | `sorry` skeleton |
+| `log_integral_exp_eq_sSup_sub_klDiv` (Donsker–Varadhan equality) | `sorry` skeleton — ⚠️ statement likely false as written (`.toReal` on ∞-KL); see Known issue under §1 |
 | `klDiv_gaussianReal_shift` (1D Gaussian KL) | proved |
 | `klDiv_stdGaussian_map_add` (Cameron–Martin cost) | proved |
 | `klDiv_map_measurableEquiv`, `klDiv_prod`, `klDiv_pi` | proved (Mathlib-upstreamable) |

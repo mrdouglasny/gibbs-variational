@@ -1,0 +1,136 @@
+# formalization.yaml — https://github.com/mathlib-initiative/formalization.yaml (v0.3)
+# Describes the `main` branch state (1 sorry, 0 axioms; see README §1 + Status table).
+version: "v0.3"
+
+project:
+  name: "gibbs-variational"
+  authors: ["Michael R. Douglas"]
+  license: "Apache-2.0"
+
+sources:
+  - title: "A variational representation for certain functionals of Brownian motion"
+    authors: ["Michel Boué", "Paul Dupuis"]
+    id: "10.1214/aop/1022855876"
+    type: "paper"
+    license: "proprietary"
+  - title: "A Weak Convergence Approach to the Theory of Large Deviations"
+    authors: ["Paul Dupuis", "Richard S. Ellis"]
+    id: "ISBN:978-0-471-07672-8"
+    type: "textbook"
+    license: "proprietary"
+    note: "§1.4.2 — Donsker–Varadhan / Gibbs variational duality."
+  - title: "Asymptotic evaluation of certain Markov process expectations for large time, I"
+    authors: ["Monroe D. Donsker", "S. R. S. Varadhan"]
+    id: "10.1002/cpa.3160280102"
+    type: "paper"
+    license: "proprietary"
+  - title: "A variational method for Φ⁴₃"
+    authors: ["Nikolay Barashkov", "Massimiliano Gubinelli"]
+    id: "10.1215/00127094-2020-0029"
+    type: "paper"
+    license: "proprietary"
+    note: "Motivating constructive-QFT application of the Gaussian-drift bound."
+
+status:
+  scope: >
+    A Mathlib-only library for the Gibbs / Donsker–Varadhan variational principle
+    and a finite-dimensional Boué–Dupuis upper bound on the free energy. Proved:
+    (1) the Gibbs variational inequality ∫f dν ≤ log∫eᶠ dμ + KL(ν‖μ) for ν ≪ μ;
+    (2) the Cameron–Martin relative-entropy identities — KL(N(c,1)‖N(0,1)) = ½c²
+    in 1D and KL((stdGaussian).map(·+h) ‖ stdGaussian) = ½‖h‖² in finite dimensions,
+    with generic supporting lemmas; (3) the finite-dimensional one-sided
+    Boué–Dupuis bound −log∫e^{−V} dμ ≤ ∫V(·+h) dμ + ½‖h‖². NOT covered: the full
+    Donsker–Varadhan equality (sSup form) is only a sorry skeleton and is flagged
+    in the README as likely false as literally written (toReal collapses ∞-KL to 0);
+    the infinite-dimensional Wiener-space Boué–Dupuis formula is not formalised.
+  sorry_count: 1
+  sorry_in_definitions: 0
+  axioms: []
+  main_results:
+    - declaration: "GibbsVariational.integral_le_log_integral_exp_add_klDiv"
+      file: "GibbsVariational/Variational.lean"
+      sorry_count: 0
+      literature_dependencies:
+        - statement: "Gibbs variational inequality (one direction of Donsker–Varadhan duality)"
+          source: "ISBN:978-0-471-07672-8"
+    - declaration: "GibbsVariational.klDiv_gaussianReal_shift"
+      file: "GibbsVariational/GaussianEntropy.lean"
+      sorry_count: 0
+      literature_dependencies:
+        - statement: "KL(N(c,1)‖N(0,1)) = ½c² (1D Cameron–Martin cost)"
+          source: "10.1214/aop/1022855876"
+    - declaration: "GibbsVariational.klDiv_stdGaussian_map_add"
+      file: "GibbsVariational/GaussianEntropy.lean"
+      sorry_count: 0
+      literature_dependencies:
+        - statement: "KL of a Cameron–Martin shift of the std Gaussian equals ½‖h‖²"
+          source: "10.1214/aop/1022855876"
+    - declaration: "GibbsVariational.neg_log_integral_exp_neg_le"
+      file: "GibbsVariational/BoueDupuis.lean"
+      sorry_count: 0
+      literature_dependencies:
+        - statement: "finite-dimensional one-sided Boué–Dupuis bound on the free energy"
+          source: "10.1214/aop/1022855876"
+
+automation:
+  methods:
+    - method: "agent"
+      models: ["claude-opus-4-8"]
+      framework: "Claude Code"
+      prompting_notes: >
+        Primary (and only) prover: cycle-by-cycle proving with compiler-guided repair.
+        Earlier commits co-authored by Claude Opus 4.7; later work by Opus 4.8.
+        An automated discharge attempt on the DV-equality theorem correctly refused
+        to "prove" the statement as written, surfacing the likely-false-statement issue.
+  notes: >
+    No AGENTS.md / GEMINI.md present and no Codex/GPT/Gemini commit trailers;
+    Claude is the sole automation method recorded for this repo.
+
+fidelity:
+  divergences: >
+    The Cameron–Martin and Boué–Dupuis results are stated over an arbitrary finite
+    index type {ι : Type*} [Fintype ι] rather than literally Fin n. Only the one-sided
+    Boué–Dupuis inequality (the form applications actually use) is proved, not the
+    infimum-over-drifts equality. The Donsker–Varadhan supremum (equality) form is a
+    sorry skeleton whose statement is flagged as likely false as literally written.
+
+review:
+  status: "self-assessed"
+  reviewers: []
+  notes: >
+    5 proved headline theorems (Gibbs inequality, 1D and n-D Cameron–Martin KL,
+    Boué–Dupuis bound) plus 3 generic Mathlib-upstreamable KL lemmas; 0
+    project-specific axioms. 1 sorry remains — the DV-equality skeleton
+    (log_integral_exp_eq_sSup_sub_klDiv), whose stated form the README documents
+    as likely false (toReal on ∞-valued KL). All proved results are bare-Mathlib.
+
+alignment:
+  namespace: "GibbsVariational"
+  statements:
+    - source: "ISBN:978-0-471-07672-8"
+      lean: "GibbsVariational.integral_le_log_integral_exp_add_klDiv"
+      module: "GibbsVariational.Variational"
+      status: "proved"
+      note: "Gibbs variational inequality; one direction of Donsker–Varadhan duality."
+    - source: "ISBN:978-0-471-07672-8"
+      lean: "GibbsVariational.log_integral_exp_eq_sSup_sub_klDiv"
+      module: "GibbsVariational.Variational"
+      status: "in-progress"
+      note: "DV equality (sSup form); sorry skeleton — statement likely false as written (toReal collapses ∞-KL to 0)."
+    - source: "10.1214/aop/1022855876"
+      lean: "GibbsVariational.klDiv_gaussianReal_shift"
+      module: "GibbsVariational.GaussianEntropy"
+      status: "proved"
+      note: "1D Cameron–Martin cost KL(N(c,1)‖N(0,1)) = ½c²."
+    - source: "10.1214/aop/1022855876"
+      lean: "GibbsVariational.klDiv_stdGaussian_map_add"
+      module: "GibbsVariational.GaussianEntropy"
+      status: "proved"
+      note: "n-D Cameron–Martin cost = ½‖h‖²; tensorised via klDiv_prod / klDiv_pi."
+    - source: "10.1214/aop/1022855876"
+      lean: "GibbsVariational.neg_log_integral_exp_neg_le"
+      module: "GibbsVariational.BoueDupuis"
+      status: "proved"
+      note: "Finite-dimensional one-sided Boué–Dupuis free-energy bound."
+
+acknowledgements: ""
